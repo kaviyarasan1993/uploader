@@ -18,9 +18,13 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.egov.dataupload.property.models.OwnerInfo;
+import org.egov.dataupload.property.models.OwnerInfo.RelationshipEnum;
 import org.egov.dataupload.property.models.Property;
+import org.egov.dataupload.property.models.PropertyDetail;
 import org.egov.dataupload.property.models.Unit;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -97,13 +101,15 @@ public class PropertyFileReader {
 			property.getPropertyDetails().get(0).setPropertyType(cell.getStringCellValue());
 			break;
 		case 4:
-			property.getPropertyDetails().get(0).setPropertySubType(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				property.getPropertyDetails().get(0).setPropertySubType(cell.getStringCellValue());
 			break;
 		case 5:
 			property.getPropertyDetails().get(0).setUsageCategoryMajor(cell.getStringCellValue());
 			break;
 		case 6:
-			property.getPropertyDetails().get(0).setUsageCategoryMinor(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				property.getPropertyDetails().get(0).setUsageCategoryMinor(cell.getStringCellValue());
 			break;
 		case 7:
 			property.getPropertyDetails().get(0).setLandArea((float) cell.getNumericCellValue());
@@ -121,24 +127,26 @@ public class PropertyFileReader {
 			property.getAddress().getLocality().setCode(cell.getStringCellValue());
 			break;
 		case 12:
-			property.getAddress().setDoorNo(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				property.getAddress().setDoorNo(cell.getStringCellValue());
 			break;
 		case 13:
-			property.getAddress().setBuildingName(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				property.getAddress().setBuildingName(cell.getStringCellValue());
 			break;
 		case 14:
-			property.getAddress().setStreet(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				property.getAddress().setStreet(cell.getStringCellValue());
 			break;
 		case 15:
-			property.getAddress().setStreet(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				property.getAddress().setPincode(cell.getStringCellValue());
 			break;
-		case 16:
-			cell.setCellType(CellType.STRING);
-			property.getAddress().setPincode(cell.getStringCellValue());
-			break;
-		case 17:
+		case 19:
 			cell.setCellType(CellType.STRING);
 			property.getAddress().setCity(cell.getStringCellValue());
+
+			break;
 		default:
 			System.out.print("");
 		}
@@ -220,13 +228,21 @@ public class PropertyFileReader {
 
 			String propertyId = row.getCell(1).getStringCellValue();
 			Property property = propertyIdMap.get(propertyId);
-			OwnerInfo ownerInfo = new OwnerInfo();
+			PropertyDetail dtl = property.getPropertyDetails().get(0);
+			OwnerInfo owner = new OwnerInfo();
 
 			for (int i = 0; i < row.getLastCellNum(); i++) {
 				Cell cell = row.getCell(i);
-				setOwnerDetails(cell, ownerInfo);
+				setOwnerDetails(cell, owner);
 			}
-			property.getPropertyDetails().get(0).getOwners().add(ownerInfo);
+			
+			/*
+			 * Adding citizen info. 
+			 * The first owner object encountered for a property will be
+			 * set as primary owner
+			 */
+			if (CollectionUtils.isEmpty(dtl.getOwners())) dtl.setCitizenInfo(owner);
+			dtl.getOwners().add(owner);
 		}
 	}
 
@@ -246,19 +262,28 @@ public class PropertyFileReader {
 			ownerInfo.setMobileNumber(cell.getStringCellValue());
 			break;
 		case 4:
-			ownerInfo.setPermanentAddress(cell.getStringCellValue());
+			ownerInfo.setFatherOrHusbandName(cell.getStringCellValue());
 			break;
 		case 5:
-			ownerInfo.setEmailId(cell.getStringCellValue());
+			ownerInfo.setRelationship(RelationshipEnum.fromValue(cell.getStringCellValue()));
 			break;
 		case 6:
-			ownerInfo.setOwnerType(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				ownerInfo.setPermanentAddress(cell.getStringCellValue());
 			break;
 		case 7:
-			ownerInfo.setGender(cell.getStringCellValue());
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				ownerInfo.setEmailId(cell.getStringCellValue());
+			break;
+		case 8:
+			ownerInfo.setOwnerType(cell.getStringCellValue());
+			break;
+		case 9:
+			if (!StringUtils.isEmpty(cell.getStringCellValue()))
+				ownerInfo.setGender(cell.getStringCellValue());
 			break;
 		default:
-			System.out.print("");
+			log.info(" default case in owner details setter");
 		}
 
 		System.out.print("\t");

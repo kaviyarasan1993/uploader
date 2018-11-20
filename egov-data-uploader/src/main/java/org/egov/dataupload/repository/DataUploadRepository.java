@@ -93,7 +93,6 @@ public class DataUploadRepository {
 			result = resultMap.getBody();
 		}catch(RestClientException e){
 			LOGGER.error("Couldn't post the response excel: "+filePath, e);
-			e.printStackTrace();
 			throw e;
 		}
 		LOGGER.info("POST FILE response: "+result);
